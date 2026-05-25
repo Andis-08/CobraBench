@@ -10,6 +10,7 @@ import kv_interfaces.KvInterface;
 import kv_interfaces.RocksDBKV;
 import kv_interfaces.SqlKV;
 import kv_interfaces.YugaByteDB;
+import kv_interfaces.ZnsKv;
 import main.Config;
 
 public abstract class Benchmark {
@@ -44,6 +45,8 @@ public abstract class Benchmark {
 			kvi =  CockroachDB.getInstance();
 		} else if (libtype == Config.LibType.YUGABYTE_LIB) {
 			kvi =  YugaByteDB.getInstance();
+		} else if (libtype == Config.LibType.ZNS_LIB) {
+			kvi =  ZnsKv.getInstance();
 		}else {
 			// should not be here
 			assert false;

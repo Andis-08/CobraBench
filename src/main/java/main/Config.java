@@ -76,7 +76,7 @@ public class Config {
 
 	public enum LibType {
 		CHENG_ORIG_LIB, GOOGLE_DATASTORE_LIB, ROCKSDB_ORIG_LIB, POSTGRESQL_LIB, RPC_CLIENT_LIB,
-		TAPIR_LIB, COCKROACH_LIB, YUGABYTE_LIB,
+		TAPIR_LIB, COCKROACH_LIB, YUGABYTE_LIB, ZNS_LIB,
 	};
 
 	public enum CCType {
@@ -200,6 +200,10 @@ public class Config {
 	
 	// 1: SERIALIZABLE, 2: SNAPSHOT ISOLATION
 	public int ISOLATION_LEVEL = 1;
+	
+	// ------------- ZNS specific configs ----------------
+	public int DURABILITY_LEVEL = 1;
+	public boolean ENABLE_RECOVERY = false;
 	
   //------------ Cockroach DB related------------
 	public String COCKROACH_PASSWORD = "";

@@ -1,0 +1,40 @@
+# Config for ZNS TPCC Benchmark
+---
+# --------------- DB Server Related -----------------
+# 8 is ZNS_LIB
+LIB_TYPE: 8
+
+# ZNS Backend settings
+ISOLATION_LEVEL: 1
+DURABILITY_LEVEL: 0
+ENABLE_RECOVERY: false
+
+# ---------------- Client library -------------------
+USE_INSTRUMENT: false
+NUM_TXN_IN_ENTITY: 1
+MAX_FZ_TXN_NUM: 20
+
+USE_NEW_EPOCH_TXN: false
+TIMESTAMP_ON: false
+LOCAL_LOG: false
+LOCAL_REMOTE_LOG: false
+CLOUD_LOG: false
+SIGN_DATA: false
+
+# ----------------- benchmark related ---------------
+# 1-TPCC
+BENCH_TYPE: 1
+
+SKIP_LOADING: false
+SKIP_TESTING: false
+DONT_RECORD_LOADING: true
+
+TXN_NUM: 10
+THREAD_NUM: 1
+CLIENT_NUM: 1
+WAIT_BETWEEN_TXNS: 0
+THROUGHPUT_PER_WAIT: 10
+CLIENT_ID: 1
+
+# --------------------TPC-C related------------------
+WAREHOUSE_NUM: 1

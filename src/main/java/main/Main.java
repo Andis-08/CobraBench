@@ -36,6 +36,10 @@ public class Main {
 		} else {
 			printHelp();
 		}
+		
+		// Manually teardown ZNS SPDK thread states to prevent JVM shutdown hook crash
+		kv_interfaces.ZnsKv.cleanupZns();
+		
 		System.exit(0);
 	}
 	
