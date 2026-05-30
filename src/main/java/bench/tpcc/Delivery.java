@@ -35,9 +35,7 @@ public class Delivery extends TPCCTransaction {
 			int noid_last = Integer.parseInt(nolist.get(1));
 			if(noid_first > noid_last) {
 				assert noid_first == noid_last+1; // which symbolizes the list is empty
-				commitTxn();
-//				continue;
-				return true;
+				return commitTxn();
 			}
 			int o_id = noid_first;
 			HashMap<String, Object> newOrder = selectNewOrder(o_id, d_id, W_ID); // 2nd read
@@ -63,8 +61,6 @@ public class Delivery extends TPCCTransaction {
 			customer.put("C_BALANCE", bal);
 			customer.put("C_DELIVERY_CNT", c_delivery_cnt);
 			updateCustomer(customer); // 14th update
-			commitTxn();
-//		}
-		return true;
+			return commitTxn();
 	}
 }

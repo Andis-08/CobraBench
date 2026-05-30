@@ -164,7 +164,6 @@ public class NewOrder extends TPCCTransaction{
 					ol_supply_w_id, ol_quantity, ol_anoumt, s_dist_xx, ""); // 1 insertion
 		}
 		total_amount = total_amount * (1+w_tax+d_tax) * (1-c_discount);
-		commitTxn();
-		return true;
+		return commitTxn();
 	}
 }

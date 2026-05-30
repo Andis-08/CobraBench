@@ -27,7 +27,7 @@ public class StockLevel extends TPCCTransaction {
 		beginTxn();
 		int stock_count = 0;
 		HashMap<String, Object> district = selectDistrict(W_ID, D_ID);
-		commitTxn();
+		if (!commitTxn()) return false;
 		int D_NEXT_O_ID = (int) district.get("D_NEXT_O_ID");
 		for (int o_id = D_NEXT_O_ID - 20; o_id < D_NEXT_O_ID; o_id++) {
 			beginTxn();
@@ -40,7 +40,7 @@ public class StockLevel extends TPCCTransaction {
 					stock_count++;
 				}
 			}
-			commitTxn();
+			if (!commitTxn()) return false;
 		}
 		return true;
 	}

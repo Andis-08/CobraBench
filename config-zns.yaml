@@ -1,40 +1,40 @@
 # Config for ZNS TPCC Benchmark
 ---
 # --------------- DB Server Related -----------------
-# 8 is ZNS_LIB
+# Backend storage engine: 0=CHENG_ORIG, 1=GOOGLE_DATASTORE, 2=ROCKSDB, 3=POSTGRESQL, 4=RPC_CLIENT, 5=TAPIR, 6=COCKROACH, 7=YUGABYTE, 8=ZNS
 LIB_TYPE: 8
 
 # ZNS Backend settings
-ISOLATION_LEVEL: 1
-DURABILITY_LEVEL: 0
-ENABLE_RECOVERY: false
+ISOLATION_LEVEL: 1     # Transaction isolation: 1=Serializable, 2=Snapshot/Causal (ZNS: 0=SnapshotIsolation, 2=CausalConsistency)
+DURABILITY_LEVEL: 0    # Data durability: 0=Striping (RAID 0), 1=Selective Replica (RAID 1)
+ENABLE_RECOVERY: false # Enable crash recovery on startup
 
 # ---------------- Client library -------------------
-USE_INSTRUMENT: false
-NUM_TXN_IN_ENTITY: 1
-MAX_FZ_TXN_NUM: 20
+USE_INSTRUMENT: false  # Enable instrumentation of transaction logs for verification
+NUM_TXN_IN_ENTITY: 1   # Number of transactions grouped per log entity before advancing
+MAX_FZ_TXN_NUM: 20     # Max transactions per epoch before triggering an epoch transition
 
-USE_NEW_EPOCH_TXN: false
-TIMESTAMP_ON: false
-LOCAL_LOG: false
-LOCAL_REMOTE_LOG: false
-CLOUD_LOG: false
-SIGN_DATA: false
+USE_NEW_EPOCH_TXN: false  # Use new epoch transaction mechanism (instead of fence transactions)
+TIMESTAMP_ON: false       # Include system timestamps in transaction log entries
+LOCAL_LOG: false          # Write transaction logs locally to disk
+LOCAL_REMOTE_LOG: false   # Write logs locally and forward copies to verifier over socket
+CLOUD_LOG: false          # Upload transaction logs to cloud storage
+SIGN_DATA: false          # Cryptographically sign transaction data/logs
 
 # ----------------- benchmark related ---------------
-# 1-TPCC
+# Workload type: 0=ChengTxn, 1=TPCC, 2=YCSB, 3=RUBiS, 4=Twitter, 5=WriteSkew, 6=ROAnomaly, 7=WOROAnomaly
 BENCH_TYPE: 1
 
-SKIP_LOADING: false
-SKIP_TESTING: false
-DONT_RECORD_LOADING: true
+SKIP_LOADING: false        # Skip the initial data loading phase (reuse pre-loaded data)
+SKIP_TESTING: false        # Skip the testing/benchmark execution phase
+DONT_RECORD_LOADING: true  # Use default txnID/writeID during loading instead of recording actual IDs
 
-TXN_NUM: 10
-THREAD_NUM: 1
-CLIENT_NUM: 1
-WAIT_BETWEEN_TXNS: 0
-THROUGHPUT_PER_WAIT: 10
-CLIENT_ID: 1
+TXN_NUM: 100               # Total number of transactions to execute in the benchmark
+THREAD_NUM: 10            # Number of worker threads per client
+CLIENT_NUM: 1             # Total number of concurrent client processes
+WAIT_BETWEEN_TXNS: 0      # Milliseconds to sleep between transaction batches (rate limiting)
+THROUGHPUT_PER_WAIT: 10   # Number of transactions to issue before each WAIT_BETWEEN_TXNS sleep
+CLIENT_ID: 1              # Globally unique identifier for this client instance (used in transaction IDs)
 
 # --------------------TPC-C related------------------
-WAREHOUSE_NUM: 1
+WAREHOUSE_NUM: 1          # Number of TPC-C warehouses (scales dataset size and cross-warehouse contention)

@@ -1,5 +1,8 @@
 package kv_interfaces;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
 import kvstore.exceptions.KvException;
 import kvstore.exceptions.TxnException;
 import site.ycsb.db.ZnsTxClient;
@@ -9,7 +12,13 @@ import org.slf4j.LoggerFactory;
 
 public class ZnsKv implements KvInterface {
     private static final Logger logger = LoggerFactory.getLogger(ZnsKv.class);
-    
+
+    // Harness-level tombstone: native putObj rejects empty payloads and has no
+    // deleteObj, so we emulate delete by writing this sentinel and translating
+    // it back to null on read.
+    private static final byte[] TOMBSTONE =
+        "__ZNS_TOMBSTONE__".getBytes(StandardCharsets.UTF_8);
+
     // We only want to initialize the native connection once per process
     private static ZnsKv instance = null;
     private static boolean isInitialized = false;
@@ -73,14 +82,14 @@ public class ZnsKv implements KvInterface {
 
     @Override
     public boolean insert(Object txn, String key, String value) throws KvException, TxnException {
-        byte[] data = value.getBytes();
+        byte[] data = value.isEmpty() ? TOMBSTONE : value.getBytes();
         int result = ZnsTxClient.nativePutObj(key, data);
         return result == 0;
     }
 
     @Override
     public boolean delete(Object txn, String key) throws KvException, TxnException {
-        int result = ZnsTxClient.nativePutObj(key, new byte[0]);
+        int result = ZnsTxClient.nativePutObj(key, TOMBSTONE);
         return result == 0;
     }
 
@@ -88,6 +97,7 @@ public class ZnsKv implements KvInterface {
     public String get(Object txn, String key) throws KvException, TxnException {
         byte[] data = ZnsTxClient.nativeGetObj(key, 65536);
         if (data == null || data.length == 0) return null;
+        if (Arrays.equals(data, TOMBSTONE)) return null;
         return new String(data);
     }
 

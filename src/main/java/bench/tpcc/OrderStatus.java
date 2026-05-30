@@ -74,7 +74,6 @@ public class OrderStatus extends TPCCTransaction {
 			ol.get("OL_AMOUNT");
 			ol.get("OL_DELIVERY_D");
 		}
-		commitTxn();
-		return true;
+		return commitTxn();
 	}
 }

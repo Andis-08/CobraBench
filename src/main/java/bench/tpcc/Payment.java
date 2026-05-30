@@ -121,7 +121,6 @@ public class Payment extends TPCCTransaction {
 
 		String H_DATA = W_NAME + "    " + D_NAME;
 		insertHistory(C_ID, C_D_ID, C_W_ID, D_ID, W_ID, H_DATE, H_AMOUNT, H_DATA);
-		commitTxn();
-		return true;
+		return commitTxn();
 	}
 }
