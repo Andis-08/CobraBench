@@ -23,7 +23,7 @@ SIGN_DATA: false          # Cryptographically sign transaction data/logs
 
 # ----------------- benchmark related ---------------
 # Workload type: 0=ChengTxn, 1=TPCC, 2=YCSB, 3=RUBiS, 4=Twitter, 5=WriteSkew, 6=ROAnomaly, 7=WOROAnomaly
-BENCH_TYPE: 1
+BENCH_TYPE: 0
 
 SKIP_LOADING: false        # Skip the initial data loading phase (reuse pre-loaded data)
 SKIP_TESTING: false        # Skip the testing/benchmark execution phase

@@ -71,9 +71,9 @@ public class ChengTransaction extends Transaction {
 			Profiler.getInstance().endTick("kvi");;
 		}
 		Profiler.getInstance().startTick("kvi");
-		commitTxn();
+		boolean committed = commitTxn();
 		Profiler.getInstance().endTick("kvi");;
-		return true;
+		return committed;
 	}
 
 	private static String getOpTag(TASK_TYPE op) {

@@ -57,8 +57,7 @@ public class YCSBTTransaction extends Transaction {
 			assert false;
 			break;
 		}
-		commitTxn();
-		return true;
+		return commitTxn();
 	}
 
 	private static String getOpTag(TASK_TYPE op) {
