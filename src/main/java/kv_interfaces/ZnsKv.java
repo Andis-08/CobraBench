@@ -19,6 +19,11 @@ public class ZnsKv implements KvInterface {
     private static final byte[] TOMBSTONE =
         "__ZNS_TOMBSTONE__".getBytes(StandardCharsets.UTF_8);
 
+    // Native reads return data padded with 0x00 up to the next 4KB block
+    // boundary, so we prepend a big-endian 32-bit payload length and use it on
+    // read to trim back to the exact bytes that were written.
+    private static final int LENGTH_PREFIX_BYTES = 4;
+
     // We only want to initialize the native connection once per process
     private static ZnsKv instance = null;
     private static boolean isInitialized = false;
@@ -82,23 +87,43 @@ public class ZnsKv implements KvInterface {
 
     @Override
     public boolean insert(Object txn, String key, String value) throws KvException, TxnException {
-        byte[] data = value.isEmpty() ? TOMBSTONE : value.getBytes();
-        int result = ZnsTxClient.nativePutObj(key, data);
+        byte[] payload = value.isEmpty() ? TOMBSTONE : value.getBytes();
+        int result = ZnsTxClient.nativePutObj(key, withLengthPrefix(payload));
         return result == 0;
     }
 
     @Override
     public boolean delete(Object txn, String key) throws KvException, TxnException {
-        int result = ZnsTxClient.nativePutObj(key, TOMBSTONE);
+        int result = ZnsTxClient.nativePutObj(key, withLengthPrefix(TOMBSTONE));
         return result == 0;
     }
 
     @Override
     public String get(Object txn, String key) throws KvException, TxnException {
-        byte[] data = ZnsTxClient.nativeGetObj(key, 65536);
-        if (data == null || data.length == 0) return null;
-        if (Arrays.equals(data, TOMBSTONE)) return null;
-        return new String(data);
+        byte[] data = ZnsTxClient.nativeGetObj(key, Config.get().ZNS_READ_BUFFER_SIZE);
+        if (data == null || data.length < LENGTH_PREFIX_BYTES) return null;
+        int len = ((data[0] & 0xFF) << 24)
+                | ((data[1] & 0xFF) << 16)
+                | ((data[2] & 0xFF) <<  8)
+                |  (data[3] & 0xFF);
+        if (len <= 0 || len > data.length - LENGTH_PREFIX_BYTES) return null;
+        int start = LENGTH_PREFIX_BYTES;
+        if (len == TOMBSTONE.length
+                && Arrays.equals(data, start, start + len, TOMBSTONE, 0, TOMBSTONE.length)) {
+            return null;
+        }
+        return new String(data, start, len);
+    }
+
+    private static byte[] withLengthPrefix(byte[] payload) {
+        byte[] wrapped = new byte[LENGTH_PREFIX_BYTES + payload.length];
+        int len = payload.length;
+        wrapped[0] = (byte) (len >>> 24);
+        wrapped[1] = (byte) (len >>> 16);
+        wrapped[2] = (byte) (len >>>  8);
+        wrapped[3] = (byte)  len;
+        System.arraycopy(payload, 0, wrapped, LENGTH_PREFIX_BYTES, len);
+        return wrapped;
     }
 
     @Override

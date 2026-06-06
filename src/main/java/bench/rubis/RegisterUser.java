@@ -57,9 +57,7 @@ public class RegisterUser extends RubisTransaction {
 		}
 		boolean res = insertUser(userId, firstName, lastName, nickName, password, email, balance, creationDate);
 		res &= insertRating(userId, rating, false);
-		commitTxn();
-
-		return res;
+		return res & commitTxn();
 	}
 
 }

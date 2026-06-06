@@ -204,6 +204,9 @@ public class Config {
 	// ------------- ZNS specific configs ----------------
 	public int DURABILITY_LEVEL = 1;
 	public boolean ENABLE_RECOVERY = false;
+	// Per-call read cap passed to ZnsTxClient.nativeGetObj. Sized to fit any
+	// single value the workload might store (payload + 4-byte length prefix).
+	public int ZNS_READ_BUFFER_SIZE = 65536;
 	
   //------------ Cockroach DB related------------
 	public String COCKROACH_PASSWORD = "";

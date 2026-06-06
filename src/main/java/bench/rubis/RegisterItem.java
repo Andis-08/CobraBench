@@ -46,8 +46,7 @@ public class RegisterItem extends RubisTransaction {
 			}
 		}
 		boolean res = insertItem(itemId, name, description, iPrice, quantity, rPrice, buyNow, 0, 10, userId, category);
-		commitTxn();
-		return res;
+		return res & commitTxn();
 	}
 
 }

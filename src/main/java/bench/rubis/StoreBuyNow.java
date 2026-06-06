@@ -44,8 +44,7 @@ public class StoreBuyNow extends RubisTransaction {
 			commitTxn();
 			return false;
 		}
-		commitTxn();
-		return true;
+		return commitTxn();
 	}
 
 }

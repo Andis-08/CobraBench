@@ -8,6 +8,7 @@ LIB_TYPE: 8
 ISOLATION_LEVEL: 1     # Transaction isolation: 1=Serializable, 2=Snapshot/Causal (ZNS: 0=SnapshotIsolation, 2=CausalConsistency)
 DURABILITY_LEVEL: 0    # Data durability: 0=Striping (RAID 0), 1=Selective Replica (RAID 1)
 ENABLE_RECOVERY: false # Enable crash recovery on startup
+ZNS_READ_BUFFER_SIZE: 65536  # Per-call read cap (bytes). Must be >= longest stored value + 4-byte length prefix.
 
 # ---------------- Client library -------------------
 USE_INSTRUMENT: false  # Enable instrumentation of transaction logs for verification
@@ -38,3 +39,6 @@ CLIENT_ID: 1              # Globally unique identifier for this client instance 
 
 # --------------------TPC-C related------------------
 WAREHOUSE_NUM: 1          # Number of TPC-C warehouses (scales dataset size and cross-warehouse contention)
+
+# ----------------- YCSB / ChengTxn related ---------
+VALUE_LENGTH: 8000        # Size (chars) of values written by INSERT/UPDATE. Applies only to YCSB and ChengTxn; TPCC and Twitter use schema-driven field widths.

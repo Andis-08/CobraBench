@@ -38,8 +38,7 @@ public class StoreComment extends RubisTransaction {
 		}
 
 		if(init) {
-			commitTxn();
-			return true;
+			return commitTxn();
 		}
 		
 		HashMap<String, Object> userTo = getUser(toId);
@@ -54,8 +53,7 @@ public class StoreComment extends RubisTransaction {
 			return false;
 		}
 
-		commitTxn();
-		return true;
+		return commitTxn();
 	}
 
 }

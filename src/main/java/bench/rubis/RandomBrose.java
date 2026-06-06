@@ -29,8 +29,7 @@ public class RandomBrose extends RubisTransaction {
 		for (int rating : ratingIds) {
 			getRating(rating);
 		}
-		commitTxn();
-		return true;
+		return commitTxn();
 	}
 
 }

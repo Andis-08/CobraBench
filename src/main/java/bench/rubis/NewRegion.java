@@ -22,8 +22,7 @@ public class NewRegion extends RubisTransaction {
 	public boolean doTansaction() throws KvException, TxnException {
 		beginTxn();
 		boolean res = insertRegion(regionName, regionId);
-		commitTxn();
-		return res;
+		return res & commitTxn();
 	}
 
 }
