@@ -24,13 +24,13 @@ SIGN_DATA: false          # Cryptographically sign transaction data/logs
 
 # ----------------- benchmark related ---------------
 # Workload type: 0=ChengTxn, 1=TPCC, 2=YCSB, 3=RUBiS, 4=Twitter, 5=WriteSkew, 6=ROAnomaly, 7=WOROAnomaly
-BENCH_TYPE: 0
+BENCH_TYPE: 1
 
 SKIP_LOADING: false        # Skip the initial data loading phase (reuse pre-loaded data)
 SKIP_TESTING: false        # Skip the testing/benchmark execution phase
 DONT_RECORD_LOADING: true  # Use default txnID/writeID during loading instead of recording actual IDs
 
-TXN_NUM: 100               # Total number of transactions to execute in the benchmark
+TXN_NUM: 10000             # Total number of transactions to execute in the benchmark
 THREAD_NUM: 10            # Number of worker threads per client
 CLIENT_NUM: 1             # Total number of concurrent client processes
 WAIT_BETWEEN_TXNS: 0      # Milliseconds to sleep between transaction batches (rate limiting)
@@ -38,7 +38,23 @@ THROUGHPUT_PER_WAIT: 10   # Number of transactions to issue before each WAIT_BET
 CLIENT_ID: 1              # Globally unique identifier for this client instance (used in transaction IDs)
 
 # --------------------TPC-C related------------------
-WAREHOUSE_NUM: 1          # Number of TPC-C warehouses (scales dataset size and cross-warehouse contention)
+WAREHOUSE_NUM: 10                # Number of TPC-C warehouses (scales dataset size and cross-warehouse contention)
+REPORT_NEWORDER_ONLY: false      # If true, the per-tag latency report only counts NewOrder
 
 # ----------------- YCSB / ChengTxn related ---------
-VALUE_LENGTH: 8000        # Size (chars) of values written by INSERT/UPDATE. Applies only to YCSB and ChengTxn; TPCC and Twitter use schema-driven field widths.
+NUM_KEYS: 1000                   # Keys pre-loaded into the dataset
+KEY_PRFIX: "key"                 # Key name prefix (full key = PRFIX + index)
+KEY_INDX_START: 1                # First key index
+VALUE_LENGTH: 8000               # Size (chars) of values written by INSERT/UPDATE
+RATIO_INSERT: 0                  # Workload mix (relative weights, summed for dice roll)
+RATIO_READ: 50
+RATIO_UPDATE: 50
+RATIO_DELETE: 0
+RATIO_RMW: 0
+OP_PER_CHENGTXN: 8               # ChengTxn only: ops batched per transaction
+
+# ----------------- Twitter related -----------------
+TWITTER_USERS_NUM: 1000          # Number of users pre-loaded; also caps the Zipfian distribution range
+
+# ----------------- RUBiS related -------------------
+RUBIS_USERS_NUM: 1000            # Pre-loaded user count. Items, comments, and Zipfian range all scale from this (items = RUBIS_USERS_NUM * RubisConstants.ItemsPerUser).

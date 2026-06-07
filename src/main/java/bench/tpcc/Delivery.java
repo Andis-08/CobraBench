@@ -31,6 +31,10 @@ public class Delivery extends TPCCTransaction {
 //		for (int d_id = 1; d_id <= TPCCConstants.DIST_PER_WARE; d_id++) {
 			beginTxn();
 			ArrayList<String> nolist = getNewOrderList(W_ID, d_id); // 1st read
+			if (nolist == null || nolist.size() < 2) {
+				abortTxn();
+				return false;
+			}
 			int noid_first = Integer.parseInt(nolist.get(0));
 			int noid_last = Integer.parseInt(nolist.get(1));
 			if(noid_first > noid_last) {
@@ -42,6 +46,10 @@ public class Delivery extends TPCCTransaction {
 			deleteNewOrder(o_id, d_id, W_ID); // 1st write (update)
 			deleteFromNewOrderList(W_ID, d_id, o_id, nolist); // 2nd write (update)
 			HashMap<String, Object> order = selectOrder(W_ID, d_id, o_id);
+			if (order == null) {
+				abortTxn();
+				return false;
+			}
 			int c_id = (int) order.get("O_C_ID");
 			order.put("O_CARRIER_ID", O_CARRIER_ID);
 			updateOrder(order); // 3rd write(update)
@@ -49,11 +57,19 @@ public class Delivery extends TPCCTransaction {
 			double ol_amount = 0;
 			for(int ol_id = 1; ol_id <= ol_cnt; ol_id++) {
 				HashMap<String, Object> ol = selectOrderLine(W_ID, d_id, o_id, ol_id); // 10*reads
+				if (ol == null) {
+					abortTxn();
+					return false;
+				}
 				ol_amount += (double) ol.get("OL_AMOUNT");
 				ol.put("OL_DELIVERY_D", OL_DELIVERY_D);
 				updateOrderLine(ol); // 10*updates
 			}
 			HashMap<String, Object> customer = selectCustomer(W_ID, d_id, c_id); // 13th read
+			if (customer == null) {
+				abortTxn();
+				return false;
+			}
 			double bal = (double) customer.get("C_BALANCE");
 			int c_delivery_cnt = (int)customer.get("C_DELIVERY_CNT");
 			bal += ol_amount;

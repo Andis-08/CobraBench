@@ -27,15 +27,32 @@ public class StockLevel extends TPCCTransaction {
 		beginTxn();
 		int stock_count = 0;
 		HashMap<String, Object> district = selectDistrict(W_ID, D_ID);
+		if (district == null) {
+			abortTxn();
+			return false;
+		}
 		if (!commitTxn()) return false;
 		int D_NEXT_O_ID = (int) district.get("D_NEXT_O_ID");
 		for (int o_id = D_NEXT_O_ID - 20; o_id < D_NEXT_O_ID; o_id++) {
 			beginTxn();
 			HashMap<String, Object> order = selectOrder(W_ID, D_ID, o_id);
+			if (order == null) {
+				abortTxn();
+				return false;
+			}
 			int ol_count = (int) order.get("O_OL_CNT");
 			for (int ol_num = 1; ol_num <= ol_count; ol_num++) {
-				int ol_i_id = (int) selectOrderLine(W_ID, D_ID, o_id, ol_num).get("OL_I_ID");
+				HashMap<String, Object> ol = selectOrderLine(W_ID, D_ID, o_id, ol_num);
+				if (ol == null) {
+					abortTxn();
+					return false;
+				}
+				int ol_i_id = (int) ol.get("OL_I_ID");
 				HashMap<String, Object> stock = selectStock(ol_i_id, W_ID);
+				if (stock == null) {
+					abortTxn();
+					return false;
+				}
 				if ((int) stock.get("S_QUANTITY") < threshold) {
 					stock_count++;
 				}

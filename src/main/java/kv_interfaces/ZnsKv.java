@@ -88,7 +88,11 @@ public class ZnsKv implements KvInterface {
     @Override
     public boolean insert(Object txn, String key, String value) throws KvException, TxnException {
         byte[] payload = value.isEmpty() ? TOMBSTONE : value.getBytes();
-        int result = ZnsTxClient.nativePutObj(key, withLengthPrefix(payload));
+        byte[] wrapped = withLengthPrefix(payload);
+        int result = ZnsTxClient.nativePutObj(key, wrapped);
+        // if (result != 0) {
+        //     System.err.println("[ZNS-PUT-FAIL] key=" + key + " rc=" + result + " payloadLen=" + payload.length);
+        // }
         return result == 0;
     }
 

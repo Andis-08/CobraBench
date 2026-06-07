@@ -55,18 +55,30 @@ public class OrderStatus extends TPCCTransaction {
 		} else {
 			customer = selectCustomer(W_ID, D_ID, C_ID);
 		}
+		if (customer == null) {
+			abortTxn();
+			return false;
+		}
 		// retrieve something from customer
 		double c_balance = (double) customer.get("C_BALANCE");
 		String c_first = (String) customer.get("C_FIRST");
 		String c_middle = (String) customer.get("C_MIDDLE");
 		C_LAST = (String) customer.get("C_LAST");
 		C_ID = (int) customer.get("C_ID");
-		
+
 		HashMap<String, Object> order = selectOrder(W_ID, D_ID, C_ID);
+		if (order == null) {
+			abortTxn();
+			return false;
+		}
 		int O_OL_CNT = (int) order.get("O_OL_CNT");
 		int o_id = (int) order.get("O_ID");
 		for(int ol_num = 1; ol_num <= O_OL_CNT; ol_num++) {
 			HashMap<String, Object> ol = selectOrderLine(W_ID, D_ID, o_id, ol_num);
+			if (ol == null) {
+				abortTxn();
+				return false;
+			}
 			// retrieve something from ol
 			ol.get("OL_I_ID");
 			ol.get("OL_SUPPLY_W_ID");

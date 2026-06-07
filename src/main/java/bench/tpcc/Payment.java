@@ -63,6 +63,10 @@ public class Payment extends TPCCTransaction {
 	public boolean doTansaction() throws KvException, TxnException {
 		beginTxn();
 		HashMap<String, Object> wh = selectWarehouse(W_ID); // 1st data retrieval
+		if (wh == null) {
+			abortTxn();
+			return false;
+		}
 		double w_ytd = (double) wh.get("W_YTD");
 		w_ytd += H_AMOUNT;
 		wh.put("W_YTD", w_ytd);
@@ -72,8 +76,12 @@ public class Payment extends TPCCTransaction {
 		wh.get("W_CITY");
 		wh.get("W_STATE");
 		wh.get("W_ZIP");
-		
+
 		HashMap<String, Object> dist = selectDistrict(W_ID, D_ID); // 2nd data retrieval
+		if (dist == null) {
+			abortTxn();
+			return false;
+		}
 		double d_ytd = (double) dist.get("D_YTD");
 		d_ytd += H_AMOUNT;
 		dist.put("D_YTD", d_ytd);
@@ -97,6 +105,10 @@ public class Payment extends TPCCTransaction {
 			customer = custs.get(custs.size()/2);
 		} else {
 			customer = selectCustomer(W_ID, D_ID, C_ID); // 3rd data retrieval
+		}
+		if (customer == null) {
+			abortTxn();
+			return false;
 		}
 		C_ID = (int) customer.get("C_ID");
 		C_LAST = (String) customer.get("C_LAST");

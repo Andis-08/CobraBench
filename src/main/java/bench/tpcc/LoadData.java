@@ -49,7 +49,7 @@ public class LoadData extends TPCCTransaction {
 			}
 			beginTxn();
 			insertItem(i_id, 0, i_name, i_price, i_data);
-			commitTxn();
+			mustCommit("item i_id=" + i_id);
 //			Utils.printProgress(i_id, TPCCConstants.MAXITEMS);
 		}
 		
@@ -63,7 +63,7 @@ public class LoadData extends TPCCTransaction {
 		double w_ytd = 3000000.00;
 		beginTxn();
 		insertWarehouse(w_id, w_name, address[0], address[1], address[2], address[3], address[4], w_tax, w_ytd);
-		commitTxn();
+		mustCommit("warehouse w_id=" + w_id);
 
 		Stock(w_id);
 		District(w_id);
@@ -112,7 +112,7 @@ public class LoadData extends TPCCTransaction {
 			insertCustomer(c_id, c_d_id, c_w_id, c_first, c_middle, c_last, address[0], address[1], address[2],
 					address[3], address[4], c_phone, c_since, c_credit, c_cred_lim, c_discount, c_balance, 10.0, 1, 0,
 					c_data);
-		commitTxn();
+		mustCommit("customer w_id=" + c_w_id + " d_id=" + c_d_id + " c_id=" + c_id);
 			// update Customer secondary Index
 			lastname2customer.get(c_last).add(Integer.toString(c_id));
 		}
@@ -120,7 +120,7 @@ public class LoadData extends TPCCTransaction {
 			String name = Utils.Lastname(i);
 			beginTxn();
 			insertCustomer2Index(w_id, d_id, name, lastname2customer.get(name));
-			commitTxn();
+			mustCommit("customer2index w_id=" + w_id + " d_id=" + d_id + " lastname=" + name);
 		}
 	}
 
@@ -163,11 +163,11 @@ public class LoadData extends TPCCTransaction {
 							Utils.MakeTimeStamp());
 				}
 			}
-			commitTxn();
+			mustCommit("order w_id=" + w_id + " d_id=" + d_id + " o_id=" + o_id);
 		}
 		beginTxn();
 		insertNewOrderList(w_id, d_id, 2100, TPCCConstants.ORD_PER_DIST);
-		commitTxn();
+		mustCommit("newOrderList w_id=" + w_id + " d_id=" + d_id);
 	}
 
 	private void Stock(int w_id) throws KvException, TxnException {
@@ -198,7 +198,7 @@ public class LoadData extends TPCCTransaction {
 
 		beginTxn();
 			insertStock(s_i_id, s_w_id, s_quantity, s_dist_xx, 0, 0, 0, s_data);
-		commitTxn();
+		mustCommit("stock w_id=" + s_w_id + " s_i_id=" + s_i_id);
 //			Utils.printProgress(s_i_id, TPCCConstants.MAXITEMS);
 		}
 	}
@@ -218,7 +218,7 @@ public class LoadData extends TPCCTransaction {
 					d_ytd, d_next_o_id);
 
 		}
-		commitTxn();
+		mustCommit("districts w_id=" + w_id);
 	}
 
 	public void loadAll() throws KvException, TxnException {
@@ -237,5 +237,12 @@ public class LoadData extends TPCCTransaction {
 	public boolean doTansaction() throws KvException, TxnException {
 		loadAll();
 		return true;
+	}
+
+	private void mustCommit(String context) throws KvException, TxnException {
+		if (!commitTxn()) {
+			System.err.println("[FATAL] TPCC load commit aborted by storage engine: " + context);
+			System.exit(-1);
+		}
 	}
 }
