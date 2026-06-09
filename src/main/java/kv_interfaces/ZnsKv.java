@@ -38,18 +38,36 @@ public class ZnsKv implements KvInterface {
     public ZnsKv() {
         if (!isInitialized) {
             // First time initialization
-            int isolation = Config.get().ISOLATION_LEVEL;
-            int durability = Config.get().DURABILITY_LEVEL;
-            boolean enableRecovery = Config.get().ENABLE_RECOVERY;
-            
-            logger.info("Initializing ZnsKv with Isolation={}, Durability={}, Recovery={}", 
-                        isolation, durability, enableRecovery);
-                        
-            int result = ZnsTxClient.nativeInitTx(isolation, durability, enableRecovery);
+            Config cfg = Config.get();
+            int isolation = cfg.ISOLATION_LEVEL;
+            int durability = cfg.DURABILITY_LEVEL;
+            boolean enableRecovery = cfg.ENABLE_RECOVERY;
+            boolean enableNodeCheckpointing = cfg.ENABLE_NODE_CHECKPOINTING;
+            boolean enablePeriodicGc = cfg.ENABLE_PERIODIC_GC;
+            boolean enableEval = cfg.ENABLE_EVAL;
+            boolean enableBatchedNodeCheckpoint = cfg.ENABLE_BATCHED_NODE_CHECKPOINT;
+            boolean enableDebug = cfg.ENABLE_DEBUG;
+            int driveCount = cfg.DRIVE_COUNT;
+
+            logger.info("Initializing ZnsKv with Isolation={}, Durability={}, Recovery={}, "
+                        + "Checkpoint={}, BatchedCheckpoint={}, PeriodicGC={}, Eval={}, Debug={}, "
+                        + "DriveCount={}",
+                        isolation, durability, enableRecovery,
+                        enableNodeCheckpointing, enableBatchedNodeCheckpoint, enablePeriodicGc,
+                        enableEval, enableDebug, driveCount);
+
+            int result = ZnsTxClient.nativeInitTx(
+                isolation, durability, enableRecovery,
+                enableNodeCheckpointing,
+                enablePeriodicGc,
+                enableEval,
+                enableBatchedNodeCheckpoint,
+                enableDebug,
+                driveCount);
             if (result != 0) {
                 throw new RuntimeException("ZnsTxClient.nativeInitTx failed with code: " + result);
             }
-            
+
             isInitialized = true;
         }
     }

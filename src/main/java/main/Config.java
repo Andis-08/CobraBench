@@ -207,6 +207,17 @@ public class Config {
 	// Per-call read cap passed to ZnsTxClient.nativeGetObj. Sized to fit any
 	// single value the workload might store (payload + 4-byte length prefix).
 	public int ZNS_READ_BUFFER_SIZE = 65536;
+	// Number of ZNS drives to claim at init. 0 = use all detected drives.
+	// Passed through to native initTx as the drive_count argument.
+	public int DRIVE_COUNT = 0;
+	// Remaining native initTx flags (see jni/zns_tx_jni.cpp::nativeInitTx).
+	public boolean ENABLE_NODE_CHECKPOINTING = false;
+	public boolean ENABLE_PERIODIC_GC = false;
+	// Turn on to emit the [IO_EVAL] phase=final log line at cleanTx
+	// (user/flash MiB/s, write amplification). See src/eval_io_stats.cpp.
+	public boolean ENABLE_EVAL = false;
+	public boolean ENABLE_BATCHED_NODE_CHECKPOINT = false;
+	public boolean ENABLE_DEBUG = false;
 	
   //------------ Cockroach DB related------------
 	public String COCKROACH_PASSWORD = "";

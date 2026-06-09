@@ -5,10 +5,16 @@
 LIB_TYPE: 8
 
 # ZNS Backend settings
-ISOLATION_LEVEL: 1     # Transaction isolation: 1=Serializable, 2=Snapshot/Causal (ZNS: 0=SnapshotIsolation, 2=CausalConsistency)
+ISOLATION_LEVEL: 0     # Transaction isolation: 1=Serializable, 2=Snapshot/Causal (ZNS: 0=SnapshotIsolation, 2=CausalConsistency)
 DURABILITY_LEVEL: 0    # Data durability: 0=Striping (RAID 0), 1=Selective Replica (RAID 1)
 ENABLE_RECOVERY: false # Enable crash recovery on startup
 ZNS_READ_BUFFER_SIZE: 65536  # Per-call read cap (bytes). Must be >= longest stored value + 4-byte length prefix.
+DRIVE_COUNT: 6               # Number of ZNS drives to claim at init. 0 = use all detected drives.
+ENABLE_NODE_CHECKPOINTING: false      # Periodically checkpoint node buffers to flash (BackgroundWorker).
+ENABLE_BATCHED_NODE_CHECKPOINT: false # Batch node checkpoints when ENABLE_NODE_CHECKPOINTING is on.
+ENABLE_PERIODIC_GC: false             # Periodic garbage collection in BackgroundWorker (does NOT affect explicit triggerGC).
+ENABLE_EVAL: false                    # Emit [IO_EVAL] phase=final log line at cleanTx (user/flash MiB/s, write amplification).
+ENABLE_DEBUG: false                   # Verbose native debug logging.
 
 # ---------------- Client library -------------------
 USE_INSTRUMENT: false  # Enable instrumentation of transaction logs for verification
@@ -30,7 +36,7 @@ SKIP_LOADING: false        # Skip the initial data loading phase (reuse pre-load
 SKIP_TESTING: false        # Skip the testing/benchmark execution phase
 DONT_RECORD_LOADING: true  # Use default txnID/writeID during loading instead of recording actual IDs
 
-TXN_NUM: 10000             # Total number of transactions to execute in the benchmark
+TXN_NUM: 20000             # Total number of transactions to execute in the benchmark
 THREAD_NUM: 10            # Number of worker threads per client
 CLIENT_NUM: 1             # Total number of concurrent client processes
 WAIT_BETWEEN_TXNS: 0      # Milliseconds to sleep between transaction batches (rate limiting)

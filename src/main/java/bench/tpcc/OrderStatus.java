@@ -50,6 +50,10 @@ public class OrderStatus extends TPCCTransaction {
 				HashMap<String, Object> cust = selectCustomer(W_ID, D_ID, cid);
 				custs.add(cust);
 			}
+			if (custs.isEmpty()) {
+				abortTxn();
+				return false;
+			}
 			Collections.sort(custs, new sortByFirstName());
 			customer = custs.get(custs.size()/2);
 		} else {
