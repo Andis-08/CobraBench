@@ -1,0 +1,59 @@
+# rubis-threads sweep against the ZNS engine, single drive, StrictSerializability (SS).
+# THREAD_NUM is the swept knob (set per-iter by run_contention_zns.sh).
+---
+LIB_TYPE: 8                  # ZNS engine (JNI hook)
+ROCKSDB_BACKEND: zenfs       # unused for LIB_TYPE=8
+ROCKSDB_ZBD_NAME: nvme6n2
+ROCKSDB_PATH: rocksdb-cobra
+
+ISOLATION_LEVEL: 1           # 1 = StrictSerializability (SS). enum: 0=SI,1=SS,2=Causal
+DURABILITY_LEVEL: 0          # striping; MUST be 0 on a single drive
+ENABLE_RECOVERY: false
+ZNS_READ_BUFFER_SIZE: 65536
+DRIVE_COUNT: 1               # 1 SSD
+ENABLE_NODE_CHECKPOINTING: false
+ENABLE_BATCHED_NODE_CHECKPOINT: false
+ENABLE_PERIODIC_GC: false
+ENABLE_EVAL: true
+ENABLE_DEBUG: false
+
+USE_INSTRUMENT: false
+NUM_TXN_IN_ENTITY: 1
+MAX_FZ_TXN_NUM: 20
+USE_NEW_EPOCH_TXN: false
+TIMESTAMP_ON: false
+LOCAL_LOG: false
+LOCAL_REMOTE_LOG: false
+CLOUD_LOG: false
+SIGN_DATA: false
+
+BENCH_TYPE: 3                # RUBiS
+SKIP_LOADING: false
+SKIP_TESTING: false
+DONT_RECORD_LOADING: true
+
+TXN_NUM: 200000             # calibration size; sweep script overrides
+THREAD_NUM: 40
+CLIENT_NUM: 1
+WAIT_BETWEEN_TXNS: 0
+THROUGHPUT_PER_WAIT: 10
+CLIENT_ID: 1
+
+WAREHOUSE_NUM: 10
+REPORT_NEWORDER_ONLY: false
+
+NUM_KEYS: 1000
+KEY_PRFIX: "key"
+KEY_INDX_START: 1
+VALUE_LENGTH: 8000
+RATIO_INSERT: 0
+RATIO_READ: 50
+RATIO_UPDATE: 50
+RATIO_DELETE: 0
+RATIO_RMW: 0
+OP_PER_CHENGTXN: 8
+
+TWITTER_USERS_NUM: 1000
+TWITTER_ACTIVATE_SKEW: 0.5
+
+RUBIS_USERS_NUM: 10000       # fixed for rubis-threads (isolates contention)

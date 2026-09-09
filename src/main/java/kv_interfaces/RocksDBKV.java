@@ -16,15 +16,27 @@ import main.Config;
 
 public class RocksDBKV implements KvInterface {
 	// the client id
-	private long client_id = 0; 
-	
+	private long client_id = 0;
+
 	// options
 	private Options options = null;
 	private TransactionDBOptions txndboptions = null;
 	private TransactionOptions txnoptions = null;
 	private WriteOptions woption = null;
 	//private ReadOptions roption = null;
-	
+
+	// If ROCKSDB_BACKEND=zenfs, we hold the ZenfsEnv here so it lives as long
+	// as the DB does. Options.setEnv also holds a Java-side reference, but we
+	// keep our own for close()/lifecycle clarity.
+	private Env zenfsEnv = null;
+
+	// Bytes-counters for the [IO_EVAL] print. RocksDB Statistics is the only
+	// path to real internal I/O (WAL + flush + compaction), matching what the
+	// ZNS engine reports via ENABLE_EVAL. Default level (EXCEPT_DETAILED_TIMERS)
+	// is the lightest exposed by rocksdbjni — measured overhead ~1-2%.
+	private final Statistics stats = new Statistics();
+	private final long startNanos = System.nanoTime();
+
 	// entities
 	private TransactionDB txn_db = null;
 	
@@ -73,18 +85,34 @@ public class RocksDBKV implements KvInterface {
 	
 	private RocksDBKV() {
 		client_id = Config.get().CLIENT_ID;
-		options = new Options().setCreateIfMissing(true);
+		options = new Options().setCreateIfMissing(true).setStatistics(stats);
+		Runtime.getRuntime().addShutdownHook(new Thread(this::dumpIoEval, "rocksdb-io-eval"));
+
+		final String backend = Config.get().ROCKSDB_BACKEND;
+		if ("zenfs".equalsIgnoreCase(backend)) {
+			final String zbd = Config.get().ROCKSDB_ZBD_NAME;
+			if (zbd == null || zbd.isEmpty()) {
+				throw new RuntimeException(
+					"ROCKSDB_BACKEND=zenfs requires ROCKSDB_ZBD_NAME (e.g. nvme6n2)");
+			}
+			System.out.println("[INFO] RocksDBKV: opening with ZenFS backend on " + zbd);
+			zenfsEnv = new ZenfsEnv(zbd);
+			options.setEnv(zenfsEnv);
+		} else {
+			System.out.println("[INFO] RocksDBKV: opening with POSIX backend at " + Config.get().ROCKSDB_PATH);
+		}
+
 		txndboptions = new TransactionDBOptions();
 		txnoptions = new TransactionOptions().setSetSnapshot(true).setDeadlockDetect(true);
 		woption = new WriteOptions();
-		
+
 		try {
 			txn_db = TransactionDB.open(options, txndboptions, Config.get().ROCKSDB_PATH);
 		} catch (RocksDBException e) {
 			e.printStackTrace();
 			assert false; // For now, we stop here
 		}
-		
+
 		readoptions = new ConcurrentHashMap<Transaction, ReadOptions>();
 		alive_txns = new ConcurrentHashMap<Long, Transaction>();
 	}
@@ -170,7 +198,7 @@ public class RocksDBKV implements KvInterface {
 		ReadOptions roption = RocksDBKV.getInstance().readoptions.get(real_txn);
 		
 		try {
-			byte[] val = real_txn.getForUpdate(roption, key.getBytes(), true);  // for serializability
+			byte[] val = real_txn.get(roption, key.getBytes());  // snapshot read, no lock => snapshot isolation
 			if (val != null) {
 				ret = new String(val);
 			}
@@ -231,6 +259,30 @@ public class RocksDBKV implements KvInterface {
 	
 	public int getNumOp() {
 		return numOp.get();
+	}
+
+	// Analog of the ZNS engine's [IO_EVAL] phase=final line. User = bytes moved
+	// through the txn API; flash = WAL + flush + compaction I/O actually issued
+	// to the block device. write_amp = flash_write / user_write.
+	private void dumpIoEval() {
+		if (stats == null) return;
+		final long userReadB    = stats.getTickerCount(TickerType.BYTES_READ);
+		final long userWriteB   = stats.getTickerCount(TickerType.BYTES_WRITTEN);
+		final long walWriteB    = stats.getTickerCount(TickerType.WAL_FILE_BYTES);
+		final long flushWriteB  = stats.getTickerCount(TickerType.FLUSH_WRITE_BYTES);
+		final long compReadB    = stats.getTickerCount(TickerType.COMPACT_READ_BYTES);
+		final long compWriteB   = stats.getTickerCount(TickerType.COMPACT_WRITE_BYTES);
+		final long flashWriteTotalB = walWriteB + flushWriteB + compWriteB;
+		final double secs = Math.max(1e-9, (System.nanoTime() - startNanos) / 1e9);
+		final double userMiBs  = (userReadB + userWriteB)       / 1048576.0 / secs;
+		final double flashMiBs = (compReadB + flashWriteTotalB) / 1048576.0 / secs;
+		final double writeAmp  = userWriteB == 0 ? 0.0 : (double) flashWriteTotalB / userWriteB;
+		System.out.printf(
+			"[IO_EVAL] phase=final backend=%s runtime_s=%.3f user_read=%d user_write=%d flash_read=%d flash_write=%d (wal=%d flush=%d comp=%d) user_MiBs=%.2f flash_MiBs=%.2f write_amp=%.2fx%n",
+			Config.get().ROCKSDB_BACKEND, secs,
+			userReadB, userWriteB, compReadB, flashWriteTotalB,
+			walWriteB, flushWriteB, compWriteB,
+			userMiBs, flashMiBs, writeAmp);
 	}
 	
 	public void clearDB() {

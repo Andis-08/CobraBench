@@ -17,7 +17,7 @@ public class TwitterBench extends Benchmark {
 		super(kvi);
 		USER_NUM = Config.get().TWITTER_USERS_NUM;
 		zipf = new ZipfianGenerator(USER_NUM);
-		activateUserZipf = new ZipfianGenerator(USER_NUM, 0.5);
+		activateUserZipf = new ZipfianGenerator(USER_NUM, Config.get().TWITTER_ACTIVATE_SKEW);
 	}
 
 	@Override

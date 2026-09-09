@@ -1,0 +1,73 @@
+# Smoke-test config: verify the CobraBench JNI hook against the freshly-built
+# ZNS engine. RUBiS (small transactions) on a SINGLE ZNS drive.
+---
+# --------------- DB Server Related -----------------
+# 8 = ZNS (drive the JNI hook -> libzns_tx_jni.so -> native tx engine)
+LIB_TYPE: 8
+
+# (RocksDB knobs unused when LIB_TYPE=8, kept for completeness)
+ROCKSDB_BACKEND: zenfs
+ROCKSDB_ZBD_NAME: nvme6n2
+ROCKSDB_PATH: rocksdb-cobra
+
+# ZNS Backend settings
+ISOLATION_LEVEL: 0     # 0=SnapshotIsolation
+DURABILITY_LEVEL: 0    # 0=Striping. MUST be 0 on a single drive (RAID1 needs >=2 drives)
+ENABLE_RECOVERY: false
+ZNS_READ_BUFFER_SIZE: 65536  # >= longest stored value + 4-byte length prefix
+DRIVE_COUNT: 1               # single drive
+ENABLE_NODE_CHECKPOINTING: false
+ENABLE_BATCHED_NODE_CHECKPOINT: false
+ENABLE_PERIODIC_GC: false
+ENABLE_EVAL: true            # emit [IO_EVAL] line -> proof of real device I/O
+ENABLE_DEBUG: false
+
+# ---------------- Client library -------------------
+USE_INSTRUMENT: false
+NUM_TXN_IN_ENTITY: 1
+MAX_FZ_TXN_NUM: 20
+
+USE_NEW_EPOCH_TXN: false
+TIMESTAMP_ON: false
+LOCAL_LOG: false
+LOCAL_REMOTE_LOG: false
+CLOUD_LOG: false
+SIGN_DATA: false
+
+# ----------------- benchmark related ---------------
+# 3 = RUBiS
+BENCH_TYPE: 3
+
+SKIP_LOADING: false        # fresh drive -> must load, else reads return null
+SKIP_TESTING: false
+DONT_RECORD_LOADING: true
+
+TXN_NUM: 20000             # short verification run
+THREAD_NUM: 8              # modest for a single-drive smoke test
+CLIENT_NUM: 1
+WAIT_BETWEEN_TXNS: 0
+THROUGHPUT_PER_WAIT: 10
+CLIENT_ID: 1
+
+# --------------------TPC-C related------------------
+WAREHOUSE_NUM: 10
+REPORT_NEWORDER_ONLY: false
+
+# ----------------- YCSB / ChengTxn related ---------
+NUM_KEYS: 1000
+KEY_PRFIX: "key"
+KEY_INDX_START: 1
+VALUE_LENGTH: 8000
+RATIO_INSERT: 0
+RATIO_READ: 50
+RATIO_UPDATE: 50
+RATIO_DELETE: 0
+RATIO_RMW: 0
+OP_PER_CHENGTXN: 8
+
+# ----------------- Twitter related -----------------
+TWITTER_USERS_NUM: 1000
+TWITTER_ACTIVATE_SKEW: 0.5
+
+# ----------------- RUBiS related -------------------
+RUBIS_USERS_NUM: 100       # small dataset -> fast load (62 regions + 100 users + 1200 items/comments)

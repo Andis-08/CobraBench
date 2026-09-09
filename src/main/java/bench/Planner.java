@@ -297,14 +297,14 @@ public class Planner {
 			commit_txn += tr.commitcounter.get();
 			abort_txn += tr.abortcounter.get();
 		}
-		
+
 //		for (int i = 0; i < reports.size(); i++) {
 //			Report report = reports.get(i);
 //			sb.append(report.getReport());
 //		}
 
 		int total_txn =  commit_txn + abort_txn;
-		
+
 		sb.append("========Summary=============\n");
 		sb.append("#Txn="+total_txn + " #commit=" + commit_txn + " #abort_txn=" + abort_txn
 				+ "  success%="+ df.format((((double)commit_txn)/total_txn) * 100) + "%\n");

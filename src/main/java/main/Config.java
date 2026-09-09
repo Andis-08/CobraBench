@@ -167,6 +167,11 @@ public class Config {
 
 	// -------------TWITTER related--------------
 	public int TWITTER_USERS_NUM = 1000;
+	// Zipfian skew for picking the "active" user on each transaction (higher =
+	// more concentrated access on a small hot set of users, i.e. more
+	// contention independent of TWITTER_USERS_NUM/THREAD_NUM). Default 0.5
+	// matches TwitterBench's prior hardcoded value.
+	public double TWITTER_ACTIVATE_SKEW = 0.5;
 	
 	/*************
 	 * Sockets *
@@ -197,6 +202,12 @@ public class Config {
 
 	// ---------------rocksdb related-----------------
 	public String ROCKSDB_PATH = "/tmp/rocksdb";
+	// RocksDB storage backend: "posix" (default, filesystem at ROCKSDB_PATH) or
+	// "zenfs" (raw ZNS block device formatted with mkfs.zenfs).
+	public String ROCKSDB_BACKEND = "posix";
+	// Raw zoned block device name for ZenFS (no /dev/ prefix), e.g. "nvme6n2".
+	// Ignored when ROCKSDB_BACKEND is not "zenfs".
+	public String ROCKSDB_ZBD_NAME = "";
 	
 	// 1: SERIALIZABLE, 2: SNAPSHOT ISOLATION
 	public int ISOLATION_LEVEL = 1;

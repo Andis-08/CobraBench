@@ -1,0 +1,59 @@
+# Small TPC-C smoke test: SS, NO node checkpointing, single drive, tiny dataset.
+# Purpose: isolate whether "No ZNS namespaces available" is environmental (SPDK
+# bring-up) vs. tied to checkpointing. WAREHOUSE_NUM=4 fits in RAM (no OOM).
+---
+LIB_TYPE: 8
+ROCKSDB_BACKEND: zenfs
+ROCKSDB_ZBD_NAME: nvme6n2
+ROCKSDB_PATH: rocksdb-cobra
+
+ISOLATION_LEVEL: 1            # SS (StrictSerializability)
+DURABILITY_LEVEL: 0          # striping; single drive
+ENABLE_RECOVERY: false
+ZNS_READ_BUFFER_SIZE: 65536
+DRIVE_COUNT: 1
+ENABLE_NODE_CHECKPOINTING: false   # NO checkpointing
+ENABLE_BATCHED_NODE_CHECKPOINT: false
+ENABLE_PERIODIC_GC: false
+ENABLE_EVAL: true
+ENABLE_DEBUG: false
+
+USE_INSTRUMENT: false
+NUM_TXN_IN_ENTITY: 1
+MAX_FZ_TXN_NUM: 20
+USE_NEW_EPOCH_TXN: false
+TIMESTAMP_ON: false
+LOCAL_LOG: false
+LOCAL_REMOTE_LOG: false
+CLOUD_LOG: false
+SIGN_DATA: false
+
+BENCH_TYPE: 1                 # TPC-C
+SKIP_LOADING: false
+SKIP_TESTING: false
+DONT_RECORD_LOADING: true
+
+TXN_NUM: 100000              # small batch
+THREAD_NUM: 40
+CLIENT_NUM: 1
+WAIT_BETWEEN_TXNS: 0
+THROUGHPUT_PER_WAIT: 10
+CLIENT_ID: 1
+
+WAREHOUSE_NUM: 4             # tiny dataset -> fits RAM, no OOM
+REPORT_NEWORDER_ONLY: false
+
+NUM_KEYS: 1000
+KEY_PRFIX: "key"
+KEY_INDX_START: 1
+VALUE_LENGTH: 8000
+RATIO_INSERT: 0
+RATIO_READ: 50
+RATIO_UPDATE: 50
+RATIO_DELETE: 0
+RATIO_RMW: 0
+OP_PER_CHENGTXN: 8
+
+TWITTER_USERS_NUM: 1000
+TWITTER_ACTIVATE_SKEW: 0.5
+RUBIS_USERS_NUM: 1000

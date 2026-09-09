@@ -27,9 +27,9 @@
 			<version>26.0-jre</version>
 		</dependency>
 		<dependency>
-			<groupId>org.rocksdb</groupId>
-			<artifactId>rocksdbjni</artifactId>
-			<version>5.15.10</version>
+  			<groupId>org.rocksdb</groupId>
+  			<artifactId>rocksdbjni-zenfs</artifactId>
+  			<version>11.6.0-zenfs</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>

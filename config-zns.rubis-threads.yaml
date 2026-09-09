@@ -1,0 +1,78 @@
+# Config for ZNS TPCC Benchmark
+---
+# --------------- DB Server Related -----------------
+# Backend storage engine: 0=CHENG_ORIG, 1=GOOGLE_DATASTORE, 2=ROCKSDB, 3=POSTGRESQL, 4=RPC_CLIENT, 5=TAPIR, 6=COCKROACH, 7=YUGABYTE, 8=ZNS
+LIB_TYPE: 2
+
+# RocksDB backend selection (used when LIB_TYPE=2):
+#   posix — regular filesystem at ROCKSDB_PATH (default)
+#   zenfs — raw ZNS device formatted with `zenfs mkfs --zbd=... --aux_path=...`
+ROCKSDB_BACKEND: zenfs
+ROCKSDB_ZBD_NAME: nvme6n2
+# With ZenFS, ROCKSDB_PATH is a virtual path composed onto the ZenFS
+# aux_path for POSIX-side shadow files. ZenFS's mkdir is not recursive, so
+# keep this a single directory name (no slashes) — otherwise you get:
+# "While mkdir if missing: <aux>/<segment>/<segment2>: No such file".
+ROCKSDB_PATH: rocksdb-cobra
+
+# ZNS Backend settings
+ISOLATION_LEVEL: 0     # Transaction isolation: 1=Serializable, 2=Snapshot/Causal (ZNS: 0=SnapshotIsolation, 2=CausalConsistency)
+DURABILITY_LEVEL: 0    # Data durability: 0=Striping (RAID 0), 1=Selective Replica (RAID 1)
+ENABLE_RECOVERY: false # Enable crash recovery on startup
+ZNS_READ_BUFFER_SIZE: 65536  # Per-call read cap (bytes). Must be >= longest stored value + 4-byte length prefix.
+DRIVE_COUNT: 6               # Number of ZNS drives to claim at init. 0 = use all detected drives.
+ENABLE_NODE_CHECKPOINTING: false      # Periodically checkpoint node buffers to flash (BackgroundWorker).
+ENABLE_BATCHED_NODE_CHECKPOINT: false # Batch node checkpoints when ENABLE_NODE_CHECKPOINTING is on.
+ENABLE_PERIODIC_GC: false             # Periodic garbage collection in BackgroundWorker (does NOT affect explicit triggerGC).
+ENABLE_EVAL: false                    # Emit [IO_EVAL] phase=final log line at cleanTx (user/flash MiB/s, write amplification).
+ENABLE_DEBUG: false                   # Verbose native debug logging.
+
+# ---------------- Client library -------------------
+USE_INSTRUMENT: false  # Enable instrumentation of transaction logs for verification
+NUM_TXN_IN_ENTITY: 1   # Number of transactions grouped per log entity before advancing
+MAX_FZ_TXN_NUM: 20     # Max transactions per epoch before triggering an epoch transition
+
+USE_NEW_EPOCH_TXN: false  # Use new epoch transaction mechanism (instead of fence transactions)
+TIMESTAMP_ON: false       # Include system timestamps in transaction log entries
+LOCAL_LOG: false          # Write transaction logs locally to disk
+LOCAL_REMOTE_LOG: false   # Write logs locally and forward copies to verifier over socket
+CLOUD_LOG: false          # Upload transaction logs to cloud storage
+SIGN_DATA: false          # Cryptographically sign transaction data/logs
+
+# ----------------- benchmark related ---------------
+# Workload type: 0=ChengTxn, 1=TPCC, 2=YCSB, 3=RUBiS, 4=Twitter, 5=WriteSkew, 6=ROAnomaly, 7=WOROAnomaly
+BENCH_TYPE: 3
+
+SKIP_LOADING: false
+SKIP_TESTING: false
+DONT_RECORD_LOADING: true  # Use default txnID/writeID during loading instead of recording actual IDs
+
+TXN_NUM: 12000000
+THREAD_NUM: 160
+CLIENT_NUM: 1             # Total number of concurrent client processes
+WAIT_BETWEEN_TXNS: 0      # Milliseconds to sleep between transaction batches (rate limiting)
+THROUGHPUT_PER_WAIT: 10   # Number of transactions to issue before each WAIT_BETWEEN_TXNS sleep
+CLIENT_ID: 1              # Globally unique identifier for this client instance (used in transaction IDs)
+
+# --------------------TPC-C related------------------
+WAREHOUSE_NUM: 10               # Number of TPC-C warehouses (scales dataset size and cross-warehouse contention)
+REPORT_NEWORDER_ONLY: false      # If true, the per-tag latency report only counts NewOrder
+
+# ----------------- YCSB / ChengTxn related ---------
+NUM_KEYS: 1000                   # Keys pre-loaded into the dataset
+KEY_PRFIX: "key"                 # Key name prefix (full key = PRFIX + index)
+KEY_INDX_START: 1                # First key index
+VALUE_LENGTH: 8000               # Size (chars) of values written by INSERT/UPDATE
+RATIO_INSERT: 0                  # Workload mix (relative weights, summed for dice roll)
+RATIO_READ: 50
+RATIO_UPDATE: 50
+RATIO_DELETE: 0
+RATIO_RMW: 0
+OP_PER_CHENGTXN: 8               # ChengTxn only: ops batched per transaction
+
+# ----------------- Twitter related -----------------
+TWITTER_USERS_NUM: 1000          # Number of users pre-loaded; also caps the Zipfian distribution range
+TWITTER_ACTIVATE_SKEW: 0.5       # Zipfian skew for picking the active user per txn; higher = more contention concentrated on fewer users
+
+# ----------------- RUBiS related -------------------
+RUBIS_USERS_NUM: 10000
