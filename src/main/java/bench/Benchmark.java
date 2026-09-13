@@ -7,7 +7,6 @@ import kv_interfaces.CockroachDB;
 import kv_interfaces.GoogleDataStore;
 import kv_interfaces.InstKV;
 import kv_interfaces.KvInterface;
-import kv_interfaces.RocksDBKV;
 import kv_interfaces.SqlKV;
 import kv_interfaces.YugaByteDB;
 import kv_interfaces.ZnsKv;
@@ -20,7 +19,19 @@ public abstract class Benchmark {
 	public static KvInterface getKvi(Config.LibType libtype, boolean useInstrument) {
 		KvInterface kvi = null;
 		if (libtype == Config.LibType.ROCKSDB_ORIG_LIB) {
-			kvi = RocksDBKV.getInstance();
+			// By name, not by reference: RocksDBKV is compiled only under the `rocksdb`
+			// Maven profile, because its dependency is a locally built RocksDB+ZenFS jar
+			// that a plain checkout cannot resolve. Naming the class here would put that
+			// dependency back on every build.
+			try {
+				kvi = (KvInterface) Class.forName("kv_interfaces.RocksDBKV")
+						.getMethod("getInstance").invoke(null);
+			} catch (ReflectiveOperationException e) {
+				throw new RuntimeException(
+						"LIB_TYPE=2 asks for the RocksDB backend, which this build does not "
+						+ "contain. Rebuild it with: mvn -Procksdb clean package -DskipTests",
+						e);
+			}
 		} else if (libtype == Config.LibType.CHENG_ORIG_LIB) {
 			assert false;
 		} else if (libtype == Config.LibType.GOOGLE_DATASTORE_LIB) {

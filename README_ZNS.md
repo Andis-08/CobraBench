@@ -38,6 +38,32 @@ cd benchmarks/CobraBench
 ./run_zns_tpcc.sh
 ```
 
+## The RocksDB backend is optional
+
+`org.rocksdb:rocksdbjni-zenfs:11.6.0-zenfs` is a locally built RocksDB+ZenFS jar, not
+anything Maven Central has, so on a checkout that has never installed it Maven fails to
+resolve the dependency and **nothing compiles at all** -- including the ZNS backend, which
+does not use RocksDB. So the default build leaves it out:
+
+```bash
+mvn clean package -DskipTests            # no RocksDB backend; LIB_TYPE=2 throws at startup
+mvn -Procksdb clean package -DskipTests  # with it
+```
+
+The profile adds back both the dependency and `kv_interfaces/RocksDBKV.java`, which the
+default build excludes. Nothing in `bench/` names that class: backends that count operations
+implement `kv_interfaces.OpCounting`, and `Benchmark.getKvi` loads the RocksDB one by name
+and reports what to rebuild if it is absent.
+
+To install the artifact:
+
+```bash
+cd <repo>/rocksdb
+ROCKSDB_PLUGINS=zenfs make -j"$(nproc)" rocksdbjava
+mvn install:install-file -Dfile=java/target/rocksdbjni-*.jar \
+  -DgroupId=org.rocksdb -DartifactId=rocksdbjni-zenfs -Dversion=11.6.0-zenfs -Dpackaging=jar
+```
+
 **Rebuilding CobraBench**:
 If you make changes to Java files (`ZnsKv.java`, `Config.java`, etc.), `run_zns_tpcc.sh` does not automatically compile them to save time. To recompile Java first, run:
 ```bash

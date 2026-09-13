@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class SqlKV implements KvInterface {
+public class SqlKV implements KvInterface, OpCounting {
 
 	// singleton per thread
 	private Map<Long, SQLSingleConn> instances = new ConcurrentHashMap<Long, SQLSingleConn>();

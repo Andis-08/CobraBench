@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-import org.rocksdb.RocksDB;
 
 import io.lettuce.core.*;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -23,9 +22,8 @@ import bench.twitter.TwitterBench;
 import bench.ycsbt.YCSBTBench;
 import kv_interfaces.CockroachDB;
 import kv_interfaces.InstKV;
+import kv_interfaces.OpCounting;
 import kv_interfaces.KvInterface;
-import kv_interfaces.RocksDBKV;
-import kv_interfaces.SqlKV;
 import kv_interfaces.instrument.ChengClientState;
 import kv_interfaces.instrument.SignatureManager;
 import kvstore.exceptions.KvException;
@@ -168,12 +166,10 @@ public class Planner {
 			kvi1 = ((InstKV)kvi).kvi;
 		}
 
-		if (kvi1 instanceof RocksDBKV) {
-			RocksDBKV rockskvi = (RocksDBKV)kvi1;
-			rockskvi.numOp.set(0);
-		} else if (kvi1 instanceof SqlKV) {
-			SqlKV sqlkvi = (SqlKV)kvi1;
-			sqlkvi.clearNumOp();
+		// Both backends that count operations implement OpCounting, so this no longer has
+		// to name either of them -- which is what keeps RocksDBKV out of the default build.
+		if (kvi1 instanceof OpCounting) {
+			((OpCounting) kvi1).clearNumOp();
 		}
 	}
 
@@ -328,20 +324,12 @@ public class Planner {
 		}
 		
 		// Other statistics: number of operation, size of trace
-		if (kvi instanceof SqlKV) {
-			SqlKV sqlkvi = (SqlKV) kvi;
-			sb.append("NumOp: " + sqlkvi.getNumOp() + "\n");
-		} else if (kvi instanceof RocksDBKV) {
-			RocksDBKV rockskvi = (RocksDBKV) kvi;
-			sb.append("NumOp: " + rockskvi.getNumOp() + "\n");
+		if (kvi instanceof OpCounting) {
+			sb.append("NumOp: " + ((OpCounting) kvi).getNumOp() + "\n");
 		} else if (kvi instanceof InstKV) {
 			InstKV instkvi = (InstKV) kvi;
-			if (instkvi.kvi instanceof SqlKV) {
-				SqlKV sqlkvi = (SqlKV) instkvi.kvi;
-				sb.append("NumOp: " + sqlkvi.getNumOp() + "\n");
-			} else if (instkvi.kvi instanceof RocksDBKV) {
-				RocksDBKV rockskvi = (RocksDBKV) instkvi.kvi;
-				sb.append("NumOp: " + rockskvi.getNumOp() + "\n");
+			if (instkvi.kvi instanceof OpCounting) {
+				sb.append("NumOp: " + ((OpCounting) instkvi.kvi).getNumOp() + "\n");
 			}
 			sb.append("ExtraOp: " + ChengClientState.getExtraOps() + "; " +
 					"ExtraTxn: " + ChengClientState.getExtraTxns() + "; " +

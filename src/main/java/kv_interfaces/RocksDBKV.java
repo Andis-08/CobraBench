@@ -14,7 +14,7 @@ import kvstore.exceptions.TxnAbortException;
 import kvstore.exceptions.TxnException;
 import main.Config;
 
-public class RocksDBKV implements KvInterface {
+public class RocksDBKV implements KvInterface, OpCounting {
 	// the client id
 	private long client_id = 0;
 
@@ -259,6 +259,11 @@ public class RocksDBKV implements KvInterface {
 	
 	public int getNumOp() {
 		return numOp.get();
+	}
+
+	@Override
+	public void clearNumOp() {
+		numOp.set(0);
 	}
 
 	// Analog of the ZNS engine's [IO_EVAL] phase=final line. User = bytes moved

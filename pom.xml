@@ -27,11 +27,6 @@
 			<version>26.0-jre</version>
 		</dependency>
 		<dependency>
-  			<groupId>org.rocksdb</groupId>
-  			<artifactId>rocksdbjni-zenfs</artifactId>
-  			<version>11.6.0-zenfs</version>
-		</dependency>
-		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-yaml</artifactId>
 			<version>2.9.0</version>
@@ -82,6 +77,13 @@
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
+		<!-- The RocksDB backend depends on org.rocksdb:rocksdbjni-zenfs, which is a locally
+		     built RocksDB+ZenFS jar rather than anything in Maven Central, so a plain
+		     checkout cannot resolve it and the whole build fails before compiling a line.
+		     It is therefore out of the default build, and `mvn -Procksdb` puts both the
+		     source file and the dependency back. Nothing in bench/ names the class: see
+		     kv_interfaces/OpCounting.java and Benchmark.getKvi. -->
+		<rocksdb.excluded.source>kv_interfaces/RocksDBKV.java</rocksdb.excluded.source>
 	</properties>
 
 	<!-- <build> <plugins> <plugin> <artifactId>chengTxn</artifactId> <configuration>
@@ -98,6 +100,14 @@
 			</extension>
 		</extensions>
 		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>${rocksdb.excluded.source}</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.xolstice.maven.plugins</groupId>
 				<artifactId>protobuf-maven-plugin</artifactId>
@@ -139,5 +149,29 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<!-- mvn -Procksdb clean package -DskipTests
+		     Requires org.rocksdb:rocksdbjni-zenfs:11.6.0-zenfs in the local repository:
+		       cd <repo>/rocksdb && ROCKSDB_PLUGINS=zenfs make -j"$(nproc)" rocksdbjava
+		       mvn install:install-file -Dfile=java/target/rocksdbjni-*.jar \
+		         -DgroupId=org.rocksdb -DartifactId=rocksdbjni-zenfs \
+		         -Dversion=11.6.0-zenfs -Dpackaging=jar -->
+		<profile>
+			<id>rocksdb</id>
+			<properties>
+				<!-- Exclude nothing. The pattern has to name a file that does not exist
+				     rather than be empty, because an empty <exclude> is an error. -->
+				<rocksdb.excluded.source>kv_interfaces/__no_such_file__.java</rocksdb.excluded.source>
+			</properties>
+			<dependencies>
+				<dependency>
+					<groupId>org.rocksdb</groupId>
+					<artifactId>rocksdbjni-zenfs</artifactId>
+					<version>11.6.0-zenfs</version>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
 
 </project>
