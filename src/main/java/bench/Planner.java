@@ -377,8 +377,13 @@ public class Planner {
 				try {
 					report.dumpLats(Config.get().LATENCY_FOLDER + "report"+clientId+"_"+i+".txt");
 				} catch (IOException e) {
+					// Logging-only failure, after the measurement is already complete.
+					// Exiting here used to skip cleanupZns() in Main.main() and walk
+					// straight into the SPDK/JVM-shutdown-hook crash that call exists to
+					// avoid (see ZnsKv.cleanupZns's call site), which then left the *next*
+					// run in a sweep unable to claim the same drive. Log and continue.
+					System.err.println("[ERROR] failed to write latency report " + i + ": " + e);
 					e.printStackTrace();
-					System.exit(-1);
 				}
 			}
 			
@@ -392,8 +397,9 @@ public class Planner {
 				fw.write(p.getResult());
 				fw.close();
 			} catch (IOException e) {
+				// Same reasoning as above.
+				System.err.println("[ERROR] failed to write result file: " + e);
 				e.printStackTrace();
-				System.exit(-1);
 			}
 		}
 		System.out.println("[SIGNAL] The test is finished! [rejungofszbj]");
