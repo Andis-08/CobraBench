@@ -36,6 +36,31 @@ public class TaskRunner extends Thread {
 	}
 	
 	private void innerRollbackAndReconnect(Transaction txn) {
+		// ZNS has no server to reconnect to: the storage layer runs in this process behind
+		// JNI, so there is no remote node whose failure this method could route around.
+		// Falling through to the branch below would exit the JVM in the middle of a
+		// measured run, and -- worse -- would leave the native transaction open: its entry
+		// in ActiveTxTracker pins getOldestActiveSnapshotTs(), which is the condition
+		// endTx() tests before submitting cleanup, so MVCC version pruning would stop for
+		// the rest of the process.
+		//
+		// Abort it and let this worker take its next task. Nothing else changes: the
+		// counters, the profiler ticks and every other backend's path are exactly as they
+		// were, so this transaction is accounted for the way the benchmark already accounts
+		// for one that reached this method. Counting it here would also double-count at the
+		// KvException call site, which already counts after its own if/else chain, and the
+		// second endTick would hit Profiler's "ending a nonexisting tag" branch -- itself a
+		// System.exit(-1).
+		if (Config.get().LIB_TYPE == Config.LibType.ZNS_LIB) {
+			try {
+				txn.kvi.abort(txn.txn);
+			} catch (KvException | TxnException e) {
+				// abortTx() is a no-op when no transaction is open, so the only way here is
+				// a real failure in the binding; record it and keep going.
+				System.err.println("[ERROR] ZNS abort after unexpected exception failed: " + e);
+			}
+			return;
+		}
 		System.out.println("[ERROR] server shutting down experienced! reconnecting to other nodes.");
 		// FIXME: break the abstraction; but we need to notify the underlying log that we've aborted
 		ChengInstrumentAPI.doTransactionRollback(txn.kvi.getTxnId(txn.txn));
