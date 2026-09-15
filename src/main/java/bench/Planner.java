@@ -237,15 +237,43 @@ public class Planner {
 		
 		@Override
 		public void run() {
-			// start feeding tasks to task runners
+			// [PRODUCER] instrumentation. One producer thread feeds THREAD_NUM consumers
+			// through a bounded queue, and that hand-off is a candidate for the two
+			// throughput states fig12 sits in. Splitting the producer's time into
+			// "generating the next transaction" and "handing it over" tells a
+			// generation-cost story from a queue-contention one, and the sampled queue
+			// depth separates the regimes directly: near capacity means the producer is
+			// blocked in put() and the consumers are the limit; near zero means the
+			// consumers are starved and the producer is.
+			//
+			// One line per run, deliberately: cheap enough to leave on in every run so
+			// that which regime a run was in is recoverable afterwards, which is the thing
+			// this figure kept lacking. The cost is three nanoTime() calls per transaction
+			// (~75 ns against a 5-8 us budget) plus one taskq.size() per 4096 -- sampled
+			// that sparsely because ArrayBlockingQueue.size() takes the very lock under
+			// test. A run that changes state part-way reports a mixture; the two
+			// configurations this was written for (64 and 512 threads) each hold one state
+			// for their whole length.
+			long gen_ns = 0, put_ns = 0;
+			long qdepth_sum = 0, qdepth_samples = 0;
 			for (int i = 0; i < Config.get().TXN_NUM; i++) {
 				try {
+					long t0 = System.nanoTime();
 					Transaction nxt = bench.getNextTxn();
+					long t1 = System.nanoTime();
 					taskq.put(nxt);
+					long t2 = System.nanoTime();
+					gen_ns += t1 - t0;
+					put_ns += t2 - t1;
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				
+
+				if ((i & 4095) == 0) {
+					qdepth_sum += taskq.size();
+					qdepth_samples++;
+				}
+
 				if (wait_time > 0 && (i + 1) % batch_txn_amount == 0) {
 					try {
 						Thread.sleep(wait_time);
@@ -254,6 +282,11 @@ public class Planner {
 					}
 				}
 			}
+
+			System.out.println("[PRODUCER] txns=" + Config.get().TXN_NUM
+					+ " consumers=" + Config.get().THREAD_NUM
+					+ " gen_ns=" + gen_ns + " put_ns=" + put_ns
+					+ " qdepth_sum=" + qdepth_sum + " qdepth_samples=" + qdepth_samples);
 
 			// send END signals to all
 			for (int i = 0; i < Config.get().THREAD_NUM; i++) {
