@@ -40,6 +40,10 @@
 # Overridable via env:
 #   ITERS=5 ./run_contention.sh tpcc
 #   RUN_DIR=/tmp/foo ./run_contention.sh rubis
+#   TXN_NUM=4000000 ./run_contention.sh rubis-threads
+#   WH=10 ./run_contention.sh tpcc-threads   # fixed WAREHOUSE_NUM (default 40), as in
+#                                            # run_contention_zns.sh, so both engines can be
+#                                            # run on the same data set
 set -eu
 cd "$(dirname "$0")"
 
@@ -70,7 +74,7 @@ BENCH=${1:-}
 # KNOB/LOW/MED/HIGH is what actually varies tier to tier.
 case "$BENCH" in
   tpcc)         BENCH_TYPE=1; KNOB=WAREHOUSE_NUM;        FIXED_KNOB="THREAD_NUM";                    FIXED_VALUE="40";       LOW=40;    MED=10;   HIGH=1;    TXN_NUM_DEFAULT=750000 ;;
-  tpcc-threads) BENCH_TYPE=1; KNOB=THREAD_NUM;           FIXED_KNOB="WAREHOUSE_NUM";                 FIXED_VALUE="40";       LOW=40;    MED=80;   HIGH=160;  TXN_NUM_DEFAULT=750000 ;;
+  tpcc-threads) BENCH_TYPE=1; KNOB=THREAD_NUM;           FIXED_KNOB="WAREHOUSE_NUM";                 FIXED_VALUE="${WH:-40}"; LOW=40;   MED=80;   HIGH=160;  TXN_NUM_DEFAULT=750000 ;;
   rubis)          BENCH_TYPE=3; KNOB=RUBIS_USERS_NUM;      FIXED_KNOB="THREAD_NUM";                    FIXED_VALUE="40";       LOW=10000; MED=1000; HIGH=100;  TXN_NUM_DEFAULT=12000000 ;;
   rubis-threads)  BENCH_TYPE=3; KNOB=THREAD_NUM;           FIXED_KNOB="RUBIS_USERS_NUM";                FIXED_VALUE="10000";    LOW=40;    MED=80;   HIGH=160;  TXN_NUM_DEFAULT=12000000 ;;
   twitter)        BENCH_TYPE=4; KNOB=TWITTER_USERS_NUM;    FIXED_KNOB="THREAD_NUM";                    FIXED_VALUE="40";       LOW=10000; MED=1000; HIGH=100;  TXN_NUM_DEFAULT=12000000 ;;
