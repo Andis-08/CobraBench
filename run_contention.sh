@@ -92,6 +92,11 @@ case "$BENCH" in
 esac
 
 ITERS=${ITERS:-3}
+# The RocksDB backend (RocksDBKV and the locally installed rocksdbjni-zenfs jar) is only in
+# the build under the `rocksdb` Maven profile; the default build leaves it out, and then
+# LIB_TYPE=2 fails at startup (README_ZNS.md, "The RocksDB backend is optional"). Every run
+# here is RocksDB, so both the build and exec:java -- whose classpath needs the jar -- use it.
+MVN_PROFILE=rocksdb
 TXN_NUM=${TXN_NUM:-$TXN_NUM_DEFAULT}
 RUN_DIR=${RUN_DIR:-/tmp/cobra/${BENCH}_sweep_$(date +%s)}
 mkdir -p "$RUN_DIR"
@@ -128,7 +133,7 @@ run_iter() {
   export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/liburing.so.2:/lib/x86_64-linux-gnu/libzbd.so.2:/lib/x86_64-linux-gnu/libgflags.so.2.2
   export MAVEN_OPTS="-Djava.library.path=../../jni"
 
-  mvn -q exec:java -Dexec.mainClass=main.Main -Dexec.args="local $CONFIG_ACTIVE" > "$log" 2>&1 || true
+  mvn -q -P"$MVN_PROFILE" exec:java -Dexec.mainClass=main.Main -Dexec.args="local $CONFIG_ACTIVE" > "$log" 2>&1 || true
 
   # Whole-iteration wall clock (reset + mkfs + load + test), distinct from
   # CobraBench's own "total runtime" line which only covers the test phase.
@@ -178,7 +183,7 @@ aggregate_tier() {
   echo
 }
 
-mvn -q package -DskipTests >/dev/null
+mvn -q -P"$MVN_PROFILE" package -DskipTests >/dev/null
 
 run_tier low    "$LOW"
 run_tier medium "$MED"
